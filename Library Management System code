@@ -1,0 +1,490 @@
+import java.io.*;
+import java.util.*;
+
+// Main Class
+public class LibraryManagementSystem {
+    private static Library library = new Library();
+
+    public static void main(String[] args) {
+        @SuppressWarnings("resource")
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Welcome to the Extended Library Management System!");
+
+        while (true) {
+            System.out.println("\nMain Menu:");
+            System.out.println("1. Admin Login");
+            System.out.println("2. Member Login");
+            System.out.println("3. Exit");
+            System.out.print("Enter your choice: ");
+            int choice = scanner.nextInt();
+
+            switch (choice) {
+                case 1:
+                    Admin admin = new Admin(library);
+                    admin.adminMenu();
+                    break;
+                case 2:
+                    FileHandler.saveBooks(library.getBooks());
+                    FileHandler.saveMembers(library.getMembers());
+                    System.out.println("Data saved! Thank you for using the Library Management System!");
+                    System.exit(0);
+                    break;
+                default:
+                    System.out.println("Invalid choice! Please try again.");
+            }
+         }
+    }
+ }
+                    
+                    // Library Class
+                    class Library {
+                        private List<Book> books;
+                        private List<MemberAccount> members;
+                        private Map<String, String> categories;
+                    
+                        public Library() {
+                            books = FileHandler.loadBooks();
+                            members = FileHandler.loadMembers();
+                            categories = new HashMap<>();
+                            if (books.isEmpty()) {
+                                initializeSampleData();
+                            }
+                        }
+                    
+                        private void initializeSampleData() {
+                            books.add(new Book(1, "Java Programming", "Herbert Schildt", "Programming", 5));
+                            books.add(new Book(2, "Clean Code", "Robert C. Martin", "Programming", 3));
+                            books.add(new Book(3, "Effective Java", "Joshua Bloch", "Programming", 4));
+                            members.add(new MemberAccount("member1", "password1"));
+                            members.add(new MemberAccount("member2", "password2"));
+                            categories.put("Programming", "Books related to software development and programming.");
+                        }
+                    
+                        public List<Book> getBooks() {
+                            return books;
+                        }
+                    
+                        public List<MemberAccount> getMembers() {
+                            return members;
+                        }
+                    
+                        public Map<String, String> getCategories() {
+                            return categories;
+                        }
+                    
+                        public Book findBookById(int bookId) {
+                            for (Book book : books) {
+                                if (book.getId() == bookId) {
+                                    return book;
+                                }
+                            }
+                            return null;
+                        }
+                    
+                        public MemberAccount findMemberByUsername(String username) {
+                            for (MemberAccount member : members) {
+                                if (member.getUsername().equals(username)) {
+                                    return member;
+                                }
+                            }
+                            return null;
+                        }
+                    
+                        public List<Book> searchBooksByTitle(String title) {
+                            List<Book> result = new ArrayList<>();
+                            for (Book book : books) {
+                                if (book.getTitle().toLowerCase().contains(title.toLowerCase())) {
+                                    result.add(book);
+                                }
+                            }
+                            return result;
+                        }
+                    
+                        public List<Book> searchBooksByCategory(String category) {
+                            List<Book> result = new ArrayList<>();
+                            for (Book book : books) {
+                                if (book.getCategory().equalsIgnoreCase(category)) {
+                                    result.add(book);
+                                }
+                            }
+                            return result;
+                        }
+                    
+                        public List<Book> searchBooksByAuthor(String author) {
+                            List<Book> result = new ArrayList<>();
+                            for (Book book : books) {
+                                if (book.getAuthor().toLowerCase().contains(author.toLowerCase())) {
+                                    result.add(book);
+                                }
+                            }
+                            return result;
+                        }
+                    
+                        public void addCategory(String category, String description) {
+                            categories.put(category, description);
+                        }
+                    
+                        public void removeCategory(String category) {
+                            categories.remove(category);
+                        }
+                    
+                        public void addBook(Book book) {
+                            books.add(book);
+                        }
+                    
+                        public void removeBook(int bookId) {
+                            books.removeIf(book -> book.getId() == bookId);
+                        }
+                    
+                        public void addMember(MemberAccount member) {
+                            members.add(member);
+                        }
+                    
+                        public void removeMember(String username) {
+                            members.removeIf(member -> member.getUsername().equals(username));
+                        }
+                    }
+                    
+                    // Book Class
+                    class Book implements Serializable {
+                        private int id;
+                        private String title;
+                        private String author;
+                        private String category;
+                        private int availableCopies;
+                        private int timesBorrowed;
+                    
+                        public Book(int id, String title, String author, String category, int availableCopies) {
+                            this.id = id;
+                            this.title = title;
+                            this.author = author;
+                            this.category = category;
+                            this.availableCopies = availableCopies;
+                            this.timesBorrowed = 0;
+                        }
+                    
+                        public int getId() {
+                            return id;
+                        }
+                    
+                        public String getTitle() {
+                            return title;
+                        }
+                    
+                        public String getAuthor() {
+                            return author;
+                        }
+                    
+                        public String getCategory() {
+                            return category;
+                        }
+                    
+                        public int getAvailableCopies() {
+                            return availableCopies;
+                        }
+                    
+                        public int getTimesBorrowed() {
+                            return timesBorrowed;
+                        }
+                    
+                        public void borrowBook() {
+                            if (availableCopies > 0) {
+                                availableCopies--;
+                                timesBorrowed++;
+                            }
+                        }
+                    
+                        public void returnBook() {
+                            availableCopies++;
+                        }
+                    
+                        @Override
+                        public String toString() {
+                            return id + " - " + title + " by " + author + " (Category: " + category + ", Available: " + availableCopies + ", Borrowed: " + timesBorrowed + ")";
+                        }
+                    }
+                    
+                    // MemberAccount Class
+                    class MemberAccount implements Serializable {
+                        private String username;
+                        private String password;
+                        private BorrowHistory borrowHistory;
+                        private FineManager fineManager;
+                        private Date membershipDate;
+                    
+                        public MemberAccount(String username, String password) {
+                            this.username = username;
+                            this.password = password;
+                            this.borrowHistory = new BorrowHistory();
+                            this.fineManager = new FineManager();
+                            this.membershipDate = new Date();
+                        }
+                    
+                        public MemberAccount(Library library) {
+                            
+                        }
+                    
+                        public String getUsername() {
+        return username;
+    }
+
+    public boolean validatePassword(String password) {
+        return this.password.equals(password);
+    }
+
+    public BorrowHistory getBorrowHistory() {
+        return borrowHistory;
+    }
+
+    public FineManager getFineManager() {
+        return fineManager;
+    }
+
+    public Date getMembershipDate() {
+        return membershipDate;
+    }
+}
+
+// FineManager Class
+class FineManager implements Serializable {
+    private double totalFine;
+
+    public FineManager() {
+        this.totalFine = 0.0;
+    }
+
+    public void addFine(double amount) {
+        totalFine += amount;
+    }
+
+    public double getTotalFine() {
+        return totalFine;
+    }
+
+    public void clearFine() {
+        totalFine = 0.0;
+    }
+}
+
+// BorrowHistory Class
+class BorrowHistory implements Serializable {
+    private List<String> history;
+
+    public BorrowHistory() {
+        history = new ArrayList<>();
+    }
+
+    public void addEntry(String entry) {
+        history.add(entry);
+    }
+
+    public void displayHistory() {
+        System.out.println("\nBorrow History:");
+        for (String entry : history) {
+            System.out.println(entry);
+        }
+    }
+}
+
+// Admin Class
+class Admin {
+    private Library library;
+
+    public Admin(Library library) {
+        this.library = library;
+    }
+
+    @SuppressWarnings("resource")
+    public void adminMenu() {
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            System.out.println("\nAdmin Menu:");
+            System.out.println("1. View Books");
+            System.out.println("2. Add New Book");
+            System.out.println("3. Manage Categories");
+            System.out.println("4. Manage Members");
+            System.out.println("5. Reports");
+            System.out.println("6. Logout");
+            System.out.print("Enter your choice: ");
+            int choice = scanner.nextInt();
+
+            switch (choice) {
+                case 1:
+                    displayBooks();
+                    break;
+                case 2:
+                    addNewBook();
+                    break;
+                case 3:
+                    manageCategories();
+                    break;
+                case 4:
+                    manageMembers();
+                    break;
+                case 5:
+                    generateReports();
+                    break;
+                case 6:
+                    return;
+                default:
+                    System.out.println("Invalid choice! Please try again.");
+            }
+        }
+    }
+
+    private void displayBooks() {
+        System.out.println("\nAvailable Books:");
+        for (Book book : library.getBooks()) {
+            System.out.println(book);
+        }
+    }
+
+    private void addNewBook() {
+        @SuppressWarnings("resource")
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter book ID: ");
+        int id = scanner.nextInt();
+        scanner.nextLine();
+        System.out.print("Enter book title: ");
+        String title = scanner.nextLine();
+        System.out.print("Enter book author: ");
+        String author = scanner.nextLine();
+        System.out.print("Enter book category: ");
+        String category = scanner.nextLine();
+        System.out.print("Enter number of copies: ");
+        int copies = scanner.nextInt();
+
+        library.addBook(new Book(id, title, author, category, copies));
+        System.out.println("Book added successfully!");
+    }
+
+    private void manageCategories() {
+        @SuppressWarnings("resource")
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("\nCategory Management:");
+        System.out.println("1. Add Category");
+        System.out.println("2. Remove Category");
+        System.out.println("3. List Categories");
+        System.out.print("Enter your choice: ");
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+
+        switch (choice) {
+            case 1:
+                System.out.print("Enter category name: ");
+                String category = scanner.nextLine();
+                System.out.print("Enter category description: ");
+                String description = scanner.nextLine();
+                library.addCategory(category, description);
+                System.out.println("Category added successfully!");
+                break;
+            case 2:
+                System.out.print("Enter category name to remove: ");
+                String removeCategory = scanner.nextLine();
+                library.removeCategory(removeCategory);
+                System.out.println("Category removed successfully!");
+                break;
+            case 3:
+                System.out.println("\nAvailable Categories:");
+                for (Map.Entry<String, String> entry : library.getCategories().entrySet()) {
+                    System.out.println(entry.getKey() + ": " + entry.getValue());
+                }
+                break;
+            default:
+                System.out.println("Invalid choice! Please try again.");
+        }
+    }
+
+    @SuppressWarnings("resource")
+    private void manageMembers() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("\nMember Management:");
+        System.out.println("1. Add Member");
+        System.out.println("2. Remove Member");
+        System.out.println("3. List Members");
+        System.out.print("Enter your choice: ");
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+
+        switch (choice) {
+            case 1:
+                addMember();
+                break;
+            case 2:
+                removeMember();
+                break;
+            case 3:
+                listMembers();
+                break;
+            default:
+                System.out.println("Invalid choice! Please try again.");
+        }
+    }
+
+    @SuppressWarnings("resource")
+    private void addMember() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter username: ");
+        String username = scanner.nextLine();
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine();
+        MemberAccount newMember = new MemberAccount(username, password);
+        library.addMember(newMember);
+        System.out.println("Member added successfully!");
+    }
+
+    @SuppressWarnings("resource")
+    private void removeMember() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter username to remove: ");
+        String username = scanner.nextLine();
+        library.removeMember(username);
+        System.out.println("Member removed successfully!");
+    }
+
+    private void listMembers() {
+        System.out.println("\nList of Members:");
+        for (MemberAccount member : library.getMembers()) {
+            System.out.println("Username: " + member.getUsername() + " | Membership Date: " + member.getMembershipDate());
+        }
+    }
+
+    private void generateReports() {
+        System.out.println("\nLibrary Reports:");
+        System.out.println("Total Books: " + library.getBooks().size());
+
+        System.out.println("Most Borrowed Books:");
+        library.getBooks().stream()
+            .sorted((b1, b2) -> b2.getTimesBorrowed() - b1.getTimesBorrowed())
+            .limit(5)
+            .forEach(book -> System.out.println(book));
+
+        System.out.println("Members with Outstanding Fines:");
+        for (MemberAccount member : library.getMembers()) {
+            if (member.getFineManager().getTotalFine() > 0) {
+                System.out.println(member.getUsername() + " - Outstanding Fine: " + member.getFineManager().getTotalFine());
+            }
+        }
+    }
+}
+
+// FileHandler Class
+class FileHandler {
+    public static List<Book> loadBooks() {
+        // Load books from file or return an empty list if not available
+        return new ArrayList<>();
+    }
+
+    public static void saveBooks(List<Book> books) {
+        // Save books to a file
+    }
+
+    public static List<MemberAccount> loadMembers() {
+        // Load members from file or return an empty list if not available
+        return new ArrayList<>();
+    }
+
+    public static void saveMembers(List<MemberAccount> members) {
+        // Save members to a file
+    }
+}
